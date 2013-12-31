@@ -74,11 +74,10 @@ namespace FNM_Undirected
         static void TestPathMining()
         {
             IndexedGraph g = new IndexedGraph();
-            g.Read(@"D:\Users\v-jiahan\HORM\Data\ex3_graph.txt");
+            g.Read(@"D:\data\Mutagenicity\1000.txt");
             FrequentPathMining fpm=new FrequentPathMiningBreadth();
-            fpm.Init(g, 1000, 3,true);
-            ShowingNames showname = new ShowingNames(@"D:\Users\v-jiahan\HORM\Data\ex3_graph");
-            ShowResult(fpm._resultCache, showname);
+            fpm.Init(g, 5, 3,true);
+            return;
         }
 
         private static void Shuffle(int[] a)
@@ -96,83 +95,39 @@ namespace FNM_Undirected
 
         private static void TestNBMining()
         {
-            //StreamWriter sw = new StreamWriter(@"D:\Users\v-jiahan\HORM\Data\chem_graph.txt");
-            //ChemFileConverter.Convert(Console.In, sw, 0);
-            //ChemFileConverter.Convert(Console.In, sw, 21);
-            //sw.Close();
-            //return;
+            /*
+            int graphNum = 1000;
+            int[] idList = new int[graphNum];
+            for (int i = 1; i <= graphNum; i++)
+                idList[i-1] = i;
+            IAMFileConverter.GenGraphFile(idList, @"D:\data\Mutagenicity\", "1000");
+            */
 
             IndexedGraph g = new IndexedGraph();
-            g.Read(@"D:\Users\v-jiahan\HORM\Data\5star_graph.txt");
+            g.Read(@"D:\data\Mutagenicity\1000.txt");
+            FrequentNeighborhoodMining fnm = new FrequentNeighborhoodMining(g);
+            var retLarge = fnm.MineEgonet(2, 9, 1);
+            //var retSmall = fnm.Mine(2, 4, true).Where(e=>e.Item1.Is_R_EgoNet(4)).ToList();
 
-            //TestCocitation(g);
-            //return;
-            ////TestPattern(g);
-            ////return;
+            //Console.WriteLine("{0} {1}", retSmall.Count, retLarge.Count);
 
-            ////List<Tuple<IndexedGraph, double, double>> ret = fnMiner.Mine(0.9, 3, 1);
-
-            ////conf 0~6712, author 6713~923691, paper 923692~2495971
-
-            //int[] authors = new int[923692 - 6713];
-            //for (int i = 6713; i < 923692; i++)
-            //    authors[i-6713] = i;
-
-            //int[] conf = new int[6713];
-            //for (int i = 0; i < 6713; i++)
-            //    conf[i] = i;
-
-            //int[] paper = new int[2495972 - 923692];
-            //for (int i = 923692; i < 2495972; i++)
-            //    paper[i - 923692] = i;
-
-            //Shuffle(paper);
-
-            //int fold=1;
-            //while (fold <= 10)
+            //for (int i = 0; i < retLarge.Count; i++)
             //{
-                //Console.WriteLine("Fold: {0}", fold);
-                //int nPaper = 100000 * fold;
-                //int[] selectedPaper = new int[nPaper];
-                //for (int i = 0; i < nPaper; i++)
-                //    selectedPaper[i] = paper[i];
-                //Array.Sort(selectedPaper);
-
-                FrequentNeighborhoodMining fnMiner = new FrequentNeighborhoodMining(g);
-
-                //Console.WriteLine(fnMiner.GetSimilarity(9, 26, 4));
-                //return;
-                for (int i = 0; i < g._vertexes.Length;i++ )
-                {
-                    for (int j = 0; j < g._vertexes.Length; j++)
-                        Console.Write(fnMiner.GetSimilarity(i,j,4).ToString("0.000")+" ");
-                    Console.WriteLine();
-                }
-
-
-                    //List<Tuple<IndexedGraph, double, double>> ret = fnMiner.Mine(0.01, 4, conf);
-
-                    //foreach (var pair in ret.OrderByDescending(edge => edge.Item2))
-                    //{
-                    //    pair.Item1.Print();
-                    //    Console.WriteLine(pair.Item2 + " " + pair.Item3);
-                    //    Console.WriteLine();
-                    //}
-
-                    //List<Tuple<IndexedGraph, int>> ret = fnMiner.Mine(g._vertexes.Length / 2, 3);
-
-                    //foreach (var pair in ret.OrderByDescending(e => e.Item2))
-                    //{
-                    //    pair.Item1.Print();
-                    //    //Console.WriteLine(pair.Item2);
-                    //    Console.WriteLine(pair.Item1.ContainsCycle());
-                    //    Console.WriteLine();
-                    //}
-
-                    //Console.WriteLine(ret.Count(e => e.Item1.ContainsCycle()) + " cycles.");
-                    //    fold++;
-                    //}
-                    return;
+            //    SubGraphTest sgt = new SubGraphTest();
+            //    bool exist = false;
+            //    for (int j = i+1; j < retLarge.Count; j++)
+            //    {
+            //        var p1 = retLarge[i];
+            //        var p2 = retLarge[j];
+            //        if (sgt.MatchNeighborhood(p1.Item1, p2.Item1, 0) && sgt.MatchNeighborhood(p2.Item1, p1.Item1, 0))
+            //        {
+            //            exist = true;
+            //            break;
+            //        }
+            //    }
+                
+            //}
+            return;
         }
     }
 }

@@ -98,6 +98,7 @@
     <Compile Include="FrequentNeighborhoodMining.cs" />
     <Compile Include="FrequentPathMining.cs" />
     <Compile Include="Graph.cs" />
+    <Compile Include="IAMFileConverter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

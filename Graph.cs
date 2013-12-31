@@ -245,6 +245,62 @@ namespace FNM_Undirected
             }
             return false;
         }
+
+        public int[] GetDistArray()
+        {
+            int[] ret = new int[_vertexes.Length];
+            Queue<Tuple<int, int>> queue = new Queue<Tuple<int, int>>();
+            HashSet<int> visitedV = new HashSet<int>();
+            queue.Enqueue(new Tuple<int, int>(0, 0));
+            visitedV.Add(0);
+            int[] dist = new int[_vertexes.Length];
+            while (queue.Count > 0)
+            {
+                var tup = queue.Dequeue();
+                ret[tup.Item1] = tup.Item2;
+                Vertex v = _vertexes[tup.Item1];
+                foreach (int eid in v._assoEdge)
+                {
+                    Edge e = _edges[eid];
+                    int otherVID = GetOtherVertexID(v, e);
+                    if (visitedV.Contains(otherVID))
+                        continue;
+                    visitedV.Add(otherVID);
+                    queue.Enqueue(new Tuple<int, int>(otherVID, tup.Item2 + 1));
+                }
+            }
+            if (visitedV.Count < _vertexes.Length)
+                return null;
+            return ret;
+        }
+
+        public bool Is_R_EgoNet(int radius)//Assert: graph is connected, pivot is node0
+        {
+            Queue<Tuple<int, int>> queue = new Queue<Tuple<int, int>>();
+            HashSet<int> visitedV = new HashSet<int>();
+            queue.Enqueue(new Tuple<int, int>(0, 0));
+            visitedV.Add(0);
+            int[] dist = new int[_vertexes.Length];
+            while (queue.Count > 0)
+            {
+                var tup = queue.Dequeue();
+                Vertex v = _vertexes[tup.Item1];
+                foreach (int eid in v._assoEdge)
+                {
+                    Edge e = _edges[eid];
+                    int otherVID = GetOtherVertexID(v, e);
+                    if (visitedV.Contains(otherVID))
+                        continue;
+                    visitedV.Add(otherVID);
+                    if (tup.Item2 == radius)
+                        return false;
+                    queue.Enqueue(new Tuple<int, int>(otherVID, tup.Item2 + 1));
+                }
+            }
+            if (visitedV.Count < _vertexes.Length)
+                return false;
+            return true;
+        }
     }
 
     public class IndexedGraph : Graph

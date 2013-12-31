@@ -109,17 +109,17 @@ namespace FNM_Undirected
 
     class FrequentPathMining
     {
-        public List<Tuple<Path, object>> _resultCache = new List<Tuple<Path, object>>();
+        public List<Tuple<Path, List<int>>> _resultCache = new List<Tuple<Path, List<int>>>();
 
-        public void Init(Graph g, int minSupp, int maxSize,bool useVIDList)
+        public void Init(Graph g, int minSupp, int maxSize,bool useVIDList,int maxRadius=100)
         {
             int[] constraintVSet = new int[g._vertexes.Length];
             for (int i = 0; i < g._vertexes.Length; i++)
                 constraintVSet[i] = i;
-            Init(g, minSupp, maxSize, constraintVSet,useVIDList);
+            Init(g, minSupp, maxSize, constraintVSet,useVIDList,maxRadius);
         }
 
-        public virtual void Init(Graph g, int minSupp, int maxSize, int[] constraintVSet, bool useVIDList)
+        public virtual void Init(Graph g, int minSupp, int maxSize, int[] constraintVSet, bool useVIDList, int maxRadius=100)
         {
             throw new NotImplementedException();
         }
@@ -132,24 +132,11 @@ namespace FNM_Undirected
             return ret;
         }
 
-        public List<Tuple<IndexedGraph,object>> GetPathAndInfo(int length)
-        {
-            List<Tuple<IndexedGraph, object>> ret = new List<Tuple<IndexedGraph, object>>();
-            foreach (var pair in _resultCache.Where(e => e.Item1.Count == length))
-                ret.Add(new Tuple<IndexedGraph,object>(pair.Item1.ToIndexedGraph(),pair.Item2));
-            return ret;
-        }
-
         public List<Tuple<IndexedGraph, int>> GetPathAndCount(int length)
         {
             List<Tuple<IndexedGraph, int>> ret = new List<Tuple<IndexedGraph, int>>();
             foreach (var pair in _resultCache.Where(e => e.Item1.Count == length))
-            {
-                if(pair.Item2 is List<int>)
-                    ret.Add(new Tuple<IndexedGraph, int>(pair.Item1.ToIndexedGraph(), ((List<int>)pair.Item2).Count));
-                else
-                    ret.Add(new Tuple<IndexedGraph, int>(pair.Item1.ToIndexedGraph(), (int)pair.Item2));
-            }
+                ret.Add(new Tuple<IndexedGraph, int>(pair.Item1.ToIndexedGraph(), ((List<int>)pair.Item2).Count));
             return ret;
         }
 
@@ -157,12 +144,7 @@ namespace FNM_Undirected
         {
             List<Tuple<IndexedGraph, List<int>>> ret = new List<Tuple<IndexedGraph, List<int>>>();
             foreach (var pair in _resultCache.Where(e => e.Item1.Count == length))
-            {
-                if(pair.Item2 is List<int>)
-                    ret.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1.ToIndexedGraph(), pair.Item2 as List<int>));
-                else
-                    ret.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1.ToIndexedGraph(), null));
-            }
+                ret.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1.ToIndexedGraph(), pair.Item2 as List<int>));
             return ret;
         }
     }
@@ -174,13 +156,15 @@ namespace FNM_Undirected
             static Path _path;
             static Graph _g;
             static int _nodeId;
+            static bool _VLabelOnly;
 
             static HashSet<Step> _ret = new HashSet<Step>();
             static HashSet<int> _nodeUsed = new HashSet<int>();
 
-            public static List<Step> GetNextStep(Path path, Graph g, int nodeId)
+            public static List<Step> GetNextStep(Path path, Graph g, int nodeId, bool VLabelOnly=false)
             {
                 _path = path; _g = g; _nodeId = nodeId;
+                _VLabelOnly = VLabelOnly;
                 _ret.Clear();
                 _nodeUsed.Clear();
                 _nodeUsed.Add(nodeId);
@@ -194,13 +178,16 @@ namespace FNM_Undirected
                 Vertex v = _g._vertexes[nodeId];
                 if (depth == _path.Count)
                 {
-                    foreach (int eid in v._assoEdge)
+                    if (!_VLabelOnly)
                     {
-                        Edge e = _g._edges[eid];
-                        if (_nodeUsed.Contains(_g.GetOtherVertexID(nodeId,e)))
-                            continue;
-                        Step step = new Step(e._eLabel, StepType.LinkTo);
-                        _ret.Add(step);
+                        foreach (int eid in v._assoEdge)
+                        {
+                            Edge e = _g._edges[eid];
+                            if (_nodeUsed.Contains(_g.GetOtherVertexID(nodeId, e)))
+                                continue;
+                            Step step = new Step(e._eLabel, StepType.LinkTo);
+                            _ret.Add(step);
+                        }
                     }
                     foreach (int lid in v._vLabel)
                     {
@@ -227,15 +214,15 @@ namespace FNM_Undirected
             }
         }
 
-        public override void Init(Graph g, int minSupp, int maxSize, int[] constraintVSet, bool useVIDList)
+        public override void Init(Graph g, int minSupp, int maxSize, int[] constraintVSet, bool useVIDList, int maxRadius=100)
         {
             _resultCache.Clear();
-            List<Tuple<Path, object>> queue = new List<Tuple<Path, object>>();
+            List<Tuple<Path, List<int>>> queue = new List<Tuple<Path, List<int>>>();
             int fronti = 0;
             Path emptyPath = new Path();
-            queue.Add(new Tuple<Path, object>(emptyPath, constraintVSet.ToList()));
+            queue.Add(new Tuple<Path, List<int>>(emptyPath, constraintVSet.ToList()));
 
-            Dictionary<Step, object> mapStep2VidsOrCounts = new Dictionary<Step, object>();
+            Dictionary<Step, List<int>> mapStep2VidsOrCounts = new Dictionary<Step, List<int>>();
 
             while (fronti < queue.Count)
             {
@@ -243,7 +230,7 @@ namespace FNM_Undirected
                 var pair1 = queue[fronti++];
                 Path thisPath = pair1.Item1;
                 //Console.WriteLine("Expanding...");
-                if (thisPath.Count > maxSize - 1)
+                if (thisPath.Count >= maxSize||thisPath.Count > maxRadius)
                     break;
                 List<int> scanedVID=null;
                 if (useVIDList)
@@ -252,39 +239,26 @@ namespace FNM_Undirected
                     scanedVID = constraintVSet.ToList();
                 foreach (int i in scanedVID)
                 {
-                    List<Step> steps = GetNextStepGivenNode.GetNextStep(thisPath, g, i);
+                    List<Step> steps = null;
+                    if(thisPath.Count==maxRadius)
+                        steps=GetNextStepGivenNode.GetNextStep(thisPath, g, i, true);
+                    else
+                        steps = GetNextStepGivenNode.GetNextStep(thisPath, g, i);
                     foreach (Step step in steps)
                     {
                         if (!mapStep2VidsOrCounts.ContainsKey(step))
-                        {
-                            if (useVIDList)
-                                mapStep2VidsOrCounts[step] = new List<int>();
-                            else
-                                mapStep2VidsOrCounts[step] = 0;
-                        }
-                        if (useVIDList)
-                            ((List<int>)mapStep2VidsOrCounts[step]).Add(i);
-                        else
-                            mapStep2VidsOrCounts[step] = (int)mapStep2VidsOrCounts[step] + 1;
+                            mapStep2VidsOrCounts[step] = new List<int>();
+                        mapStep2VidsOrCounts[step].Add(i);
                     }
                 }
                 foreach (var pair in mapStep2VidsOrCounts)
                 {
-                    if (useVIDList)
-                    {
-                        if (((List<int>)pair.Value).Count < minSupp)
-                            continue;
-                    }
-                    else
-                    {
-                        if ((int)pair.Value < minSupp)
-                            continue;
-                    }
+                    if (((List<int>)pair.Value).Count < minSupp)
+                        continue;
                     Path newPath = new Path(thisPath, pair.Key);
-                    object info = pair.Value;
-                    _resultCache.Add(new Tuple<Path, object>(newPath, info));
+                    _resultCache.Add(new Tuple<Path, List<int>>(newPath, pair.Value));
                     if (pair.Key.Item2 != StepType.Nlabel)
-                        queue.Add(new Tuple<Path, object>(newPath, info));
+                        queue.Add(new Tuple<Path, List<int>>(newPath, pair.Value));
                 }
             }
         }
