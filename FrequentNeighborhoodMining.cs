@@ -952,6 +952,208 @@ namespace FNM_Undirected
             return ret;
         }
 
+        public List<Tuple<IndexedGraph, List<int>>> MineEgonet_BaseLine(int minSupp, int maxSize, int maxRadius, int[] constraintVSet)
+        {
+            //bool useVIDList = false;
+
+            List<int> constraintVSetList = constraintVSet.ToList();
+
+            DateTime begin = DateTime.Now;
+
+            //FrequentPathMining fpm = new FrequentPathMiningDepth();
+            FrequentPathMining fpm = new FrequentPathMiningBreadth();
+
+            fpm.Init(_g, minSupp, maxSize, constraintVSet, true);
+            //fpm.Init(_g, minSupp, maxSize);
+
+            Console.WriteLine("{0} seconds. {1} path results.",
+                (DateTime.Now - begin).TotalSeconds,
+                fpm._resultCache.Count);
+
+
+            List<Tuple<IndexedGraph, List<int>>> ret = new List<Tuple<IndexedGraph, List<int>>>();
+
+            Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
+            List<Tuple<IndexedGraph, List<int>>> lastResults = fpm.GetPathAndVID(1);
+
+            ret.AddRange(fpm.GetPathAndVID(1));
+
+            //IndexedGraph z = new IndexedGraph();
+            //z.Read(@"D:\1.txt");
+            //SubGraphTest sgt1=new SubGraphTest();
+
+            for (int size = 2; size <= maxSize; size++)
+            {
+                begin = DateTime.Now;
+                Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
+                List<Tuple<IndexedGraph, List<int>>> tempResults = new List<Tuple<IndexedGraph, List<int>>>();
+
+                for (int i = 0; i < lastResults.Count; i++)
+                {
+                    for (int j = i; j < lastResults.Count; j++)
+                    {
+                        List<IndexedGraph> newPatterns = null;
+                        List<int> vids = null;
+                        if (j == i)
+                        {
+                            Graph tempG = lastResults[i].Item1.ShallowCopy();
+                            newPatterns = JoinGraphPair(tempG, lastResults[i].Item1);
+                            vids = lastResults[i].Item2;
+                        }
+                        else
+                        {
+                            vids = Tools.MergeSortedArray(lastResults[i].Item2, lastResults[j].Item2);
+                            if (vids.Count < minSupp)
+                                continue;
+                            newPatterns = JoinGraphPair(lastResults[i].Item1, lastResults[j].Item1);
+                        }
+                        foreach (IndexedGraph pattern in newPatterns)
+                        {
+                            //if (sgt1.MatchNeighborhood(z, pattern, 0))
+                            //{
+                            //    Console.WriteLine();
+                            //}
+                            bool hasDup = false;
+                            foreach (var pair in tempResults)
+                                if (_subGTester.MatchNeighborhood(pattern, pair.Item1, 0))
+                                {
+                                    hasDup = true;
+                                    break;
+                                }
+                            if (!hasDup)
+                                tempResults.Add(new Tuple<IndexedGraph, List<int>>(pattern, vids));
+                        }
+                    }
+                }
+                Console.WriteLine("{0} seconds. {1} candidates.",
+                    (DateTime.Now - begin).TotalSeconds,
+                    tempResults.Count);
+                begin = DateTime.Now;
+                Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
+
+                //Compute Zipper Patterns
+                List<Tuple<IndexedGraph, List<int>>> zipperPatterns = new List<Tuple<IndexedGraph, List<int>>>();
+                if (size > maxRadius + 1 && size <= 2 * maxRadius + 1)
+                {
+                    SubGraphTest sgt = new SubGraphTest(true, MapOperationInstances.GetZipperHeads);
+                    foreach (var tup in lastResults)
+                    {
+                        Tuple<int, int> headPos = ZipperHandler.DetectPotentialZipper(tup.Item1, maxRadius);
+                        if (headPos == null)
+                            continue;
+                        List<int> vids = null;
+                        Dictionary<int, List<int>> mapELabel2Vids = new Dictionary<int, List<int>>();
+                        vids = tup.Item2;
+                        foreach (int i in vids)
+                        {
+                            sgt.MatchNeighborhood(tup.Item1, _g, i, headPos);
+                            HashSet<int> eLabels = new HashSet<int>();
+                            sgt._rets.ForEach(e => eLabels.Add((int)e));
+                            foreach (int eLabel in eLabels)
+                            {
+                                if (!mapELabel2Vids.ContainsKey(eLabel))
+                                {
+                                    mapELabel2Vids[eLabel] = new List<int>();
+                                }
+                                mapELabel2Vids[eLabel].Add(i);
+                            }
+                        }
+                        foreach (var pair in mapELabel2Vids)
+                            if (pair.Value.Count >= minSupp)
+                            {
+                                Edge newEdge = new Edge();
+                                newEdge._v1 = headPos.Item1;
+                                newEdge._v2 = headPos.Item2;
+                                newEdge._eLabel = pair.Key;
+
+                                IndexedGraph g = tup.Item1.ShallowCopy();
+                                Edge[] newEdgeList = new Edge[g._edges.Length + 1];
+                                g._edges.CopyTo(newEdgeList, 0);
+                                newEdgeList[newEdgeList.Length - 1] = newEdge;
+                                g._edges = newEdgeList;
+
+                                Vertex v1 = g._vertexes[newEdge._v1];
+                                int[] newOutEdgeList = new int[v1._assoEdge.Length + 1];
+                                v1._assoEdge.CopyTo(newOutEdgeList, 0);
+                                newOutEdgeList[newOutEdgeList.Length - 1] = newEdgeList.Length - 1;
+                                v1._assoEdge = newOutEdgeList;
+
+                                Vertex v2 = g._vertexes[newEdge._v2];
+                                int[] newInEdgeList = new int[v2._assoEdge.Length + 1];
+                                v2._assoEdge.CopyTo(newInEdgeList, 0);
+                                newInEdgeList[newInEdgeList.Length - 1] = newEdgeList.Length - 1;
+                                v2._assoEdge = newInEdgeList;
+                                g.GenIndex();
+
+                                zipperPatterns.Add(new Tuple<IndexedGraph, List<int>>(g, tup.Item2));
+                            }
+                    }
+                }
+                lastResults.Clear();
+                foreach (var pair in tempResults)
+                {
+                    int supp = 0;
+
+                    List<List<int>> ccands = _niindex.GetCandidatesForeachVertex(pair.Item1);
+
+                    if (ccands.Exists(e => e != null && e.Count == 0))
+                        continue;
+
+                    //if (ccands[0].Count < minSupp)
+                    //continue;
+
+                    _subGTester._cands = ccands;
+
+                    List<int> vids = null, filteredVids = null;
+                    filteredVids = new List<int>();
+                    vids = pair.Item2;
+
+                    foreach (int i in vids)
+                        if (_subGTester.MatchNeighborhood(pair.Item1, _g, i))
+                        {
+                            supp++;
+                            filteredVids.Add(i);
+                        }
+
+                    _subGTester._cands = null;
+
+                    if (supp >= minSupp)
+                    {
+                        ret.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1, filteredVids));
+
+                        //pattern.Print();
+                        //Console.WriteLine(supp+"\n");
+
+                        lastResults.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1, filteredVids));
+                    }
+                }
+                Console.WriteLine("{0} seconds. {1} results.",
+                    (DateTime.Now - begin).TotalSeconds,
+                    lastResults.Count);
+                begin = DateTime.Now;
+
+                if (size <= maxRadius + 1)
+                {
+                    var addpath = fpm.GetPathAndVID(size);
+                    lastResults.AddRange(addpath);
+
+                    Console.WriteLine("Adding {0} paths.", addpath.Count);
+                    //lastResults.Sort((x, y) => x._vertexes.Length - y._vertexes.Length);
+                    ret.AddRange(fpm.GetPathAndVID(size));
+                }
+                else
+                {
+                    //add Zipper Patterns
+                    Console.WriteLine("Adding {0} Zippers.", zipperPatterns.Count);
+                    lastResults.AddRange(zipperPatterns);
+                    ret.AddRange(zipperPatterns);
+                }
+                if (lastResults.Count == 0)
+                    break;
+            }
+            return ret;
+        }
+
         public List<Tuple<IndexedGraph, List<int>>> Mine(int minSupp, int maxSize, bool useVIDList)
         {
             int[] constraintVSet = new int[_g._vertexes.Length];
