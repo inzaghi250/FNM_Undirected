@@ -80,7 +80,7 @@ namespace FNM_Undirected
             return;
         }
 
-        private static void Shuffle(int[] a)
+        public static void Shuffle(int[] a)
         {
             Random r = new Random(1);
             for (int i = a.Length - 1; i >= 0; i--)
@@ -106,10 +106,10 @@ namespace FNM_Undirected
             IndexedGraph g = new IndexedGraph();
             g.Read(@"D:\data\Mutagenicity\1000.txt");
             FrequentNeighborhoodMining fnm = new FrequentNeighborhoodMining(g);
-            var retLarge = fnm.MineEgonet(2, 9, 1);
-            //var retSmall = fnm.Mine(2, 4, true).Where(e=>e.Item1.Is_R_EgoNet(4)).ToList();
+            var retLarge = fnm.MineEgonet(2, 6, 3);
+            var retSmall = fnm.MineEgonet_BaseLine(2, 6, 3);
 
-            //Console.WriteLine("{0} {1}", retSmall.Count, retLarge.Count);
+            Console.WriteLine("{0} {1}", retSmall.Count, retLarge.Count);
 
             //for (int i = 0; i < retLarge.Count; i++)
             //{

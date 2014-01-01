@@ -400,7 +400,7 @@ namespace FNM_Undirected
         }
     }
 
-    class FrequentNeighborhoodMining
+    public class FrequentNeighborhoodMining
     {      
         IndexedGraph _g;
         SubGraphTest _subGTester;
@@ -952,18 +952,19 @@ namespace FNM_Undirected
             return ret;
         }
 
-        public List<Tuple<IndexedGraph, List<int>>> MineEgonet_BaseLine(int minSupp, int maxSize, int maxRadius, int[] constraintVSet)
+        public List<Tuple<IndexedGraph, List<int>>> MineEgonet_BaseLine(int minSupp, int maxSize, int maxRadius)
         {
             //bool useVIDList = false;
-
-            List<int> constraintVSetList = constraintVSet.ToList();
+            int[] constraintVSet = new int[_g._vertexes.Length];
+            for (int i = 0; i < constraintVSet.Length; i++)
+                constraintVSet[i] = i;
 
             DateTime begin = DateTime.Now;
 
             //FrequentPathMining fpm = new FrequentPathMiningDepth();
             FrequentPathMining fpm = new FrequentPathMiningBreadth();
 
-            fpm.Init(_g, minSupp, maxSize, constraintVSet, true);
+            fpm.Init(_g, minSupp, maxSize, constraintVSet, true,maxRadius+1);
             //fpm.Init(_g, minSupp, maxSize);
 
             Console.WriteLine("{0} seconds. {1} path results.",
@@ -1031,64 +1032,6 @@ namespace FNM_Undirected
                 begin = DateTime.Now;
                 Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
 
-                //Compute Zipper Patterns
-                List<Tuple<IndexedGraph, List<int>>> zipperPatterns = new List<Tuple<IndexedGraph, List<int>>>();
-                if (size > maxRadius + 1 && size <= 2 * maxRadius + 1)
-                {
-                    SubGraphTest sgt = new SubGraphTest(true, MapOperationInstances.GetZipperHeads);
-                    foreach (var tup in lastResults)
-                    {
-                        Tuple<int, int> headPos = ZipperHandler.DetectPotentialZipper(tup.Item1, maxRadius);
-                        if (headPos == null)
-                            continue;
-                        List<int> vids = null;
-                        Dictionary<int, List<int>> mapELabel2Vids = new Dictionary<int, List<int>>();
-                        vids = tup.Item2;
-                        foreach (int i in vids)
-                        {
-                            sgt.MatchNeighborhood(tup.Item1, _g, i, headPos);
-                            HashSet<int> eLabels = new HashSet<int>();
-                            sgt._rets.ForEach(e => eLabels.Add((int)e));
-                            foreach (int eLabel in eLabels)
-                            {
-                                if (!mapELabel2Vids.ContainsKey(eLabel))
-                                {
-                                    mapELabel2Vids[eLabel] = new List<int>();
-                                }
-                                mapELabel2Vids[eLabel].Add(i);
-                            }
-                        }
-                        foreach (var pair in mapELabel2Vids)
-                            if (pair.Value.Count >= minSupp)
-                            {
-                                Edge newEdge = new Edge();
-                                newEdge._v1 = headPos.Item1;
-                                newEdge._v2 = headPos.Item2;
-                                newEdge._eLabel = pair.Key;
-
-                                IndexedGraph g = tup.Item1.ShallowCopy();
-                                Edge[] newEdgeList = new Edge[g._edges.Length + 1];
-                                g._edges.CopyTo(newEdgeList, 0);
-                                newEdgeList[newEdgeList.Length - 1] = newEdge;
-                                g._edges = newEdgeList;
-
-                                Vertex v1 = g._vertexes[newEdge._v1];
-                                int[] newOutEdgeList = new int[v1._assoEdge.Length + 1];
-                                v1._assoEdge.CopyTo(newOutEdgeList, 0);
-                                newOutEdgeList[newOutEdgeList.Length - 1] = newEdgeList.Length - 1;
-                                v1._assoEdge = newOutEdgeList;
-
-                                Vertex v2 = g._vertexes[newEdge._v2];
-                                int[] newInEdgeList = new int[v2._assoEdge.Length + 1];
-                                v2._assoEdge.CopyTo(newInEdgeList, 0);
-                                newInEdgeList[newInEdgeList.Length - 1] = newEdgeList.Length - 1;
-                                v2._assoEdge = newInEdgeList;
-                                g.GenIndex();
-
-                                zipperPatterns.Add(new Tuple<IndexedGraph, List<int>>(g, tup.Item2));
-                            }
-                    }
-                }
                 lastResults.Clear();
                 foreach (var pair in tempResults)
                 {
@@ -1132,26 +1075,17 @@ namespace FNM_Undirected
                     lastResults.Count);
                 begin = DateTime.Now;
 
-                if (size <= maxRadius + 1)
-                {
-                    var addpath = fpm.GetPathAndVID(size);
-                    lastResults.AddRange(addpath);
+                var addpath = fpm.GetPathAndVID(size);
+                lastResults.AddRange(addpath);
 
-                    Console.WriteLine("Adding {0} paths.", addpath.Count);
-                    //lastResults.Sort((x, y) => x._vertexes.Length - y._vertexes.Length);
-                    ret.AddRange(fpm.GetPathAndVID(size));
-                }
-                else
-                {
-                    //add Zipper Patterns
-                    Console.WriteLine("Adding {0} Zippers.", zipperPatterns.Count);
-                    lastResults.AddRange(zipperPatterns);
-                    ret.AddRange(zipperPatterns);
-                }
+                Console.WriteLine("Adding {0} paths.", addpath.Count);
+                //lastResults.Sort((x, y) => x._vertexes.Length - y._vertexes.Length);
+                ret.AddRange(fpm.GetPathAndVID(size));
+               
                 if (lastResults.Count == 0)
                     break;
             }
-            return ret;
+            return ret.Where(e=>e.Item1.Is_R_EgoNet(maxRadius)).ToList();
         }
 
         public List<Tuple<IndexedGraph, List<int>>> Mine(int minSupp, int maxSize, bool useVIDList)

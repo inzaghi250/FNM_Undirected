@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace FNM_Undirected
 {
-    class IAMFileConverter
+    public class IAMFileConverter
     {
         public static string _dataDir = @"D:\data\Mutagenicity\data\";
 
