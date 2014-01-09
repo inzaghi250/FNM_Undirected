@@ -229,7 +229,7 @@ namespace FNM_Undirected
             });
     }
 
-    class SubGraphTest
+    public class SubGraphTest
     {
         public List<List<int>> _cands = null;
 

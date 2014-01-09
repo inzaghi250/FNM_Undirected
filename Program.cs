@@ -80,12 +80,12 @@ namespace FNM_Undirected
             return;
         }
 
+        static Random _r = new Random();
         public static void Shuffle(int[] a)
         {
-            Random r = new Random(1);
             for (int i = a.Length - 1; i >= 0; i--)
             {
-                int j = (int)(i * r.NextDouble());
+                int j = (int)(i * _r.NextDouble());
                 int temp = a[i];
                 a[i] = a[j];
                 a[j] = temp;
@@ -96,12 +96,12 @@ namespace FNM_Undirected
         private static void TestNBMining()
         {
             /*
-            int graphNum = 1000;
+            int graphNum = 4337;
             int[] idList = new int[graphNum];
             for (int i = 1; i <= graphNum; i++)
                 idList[i-1] = i;
-            IAMFileConverter.GenGraphFile(idList, @"D:\data\Mutagenicity\", "1000");
-            */
+            IAMFileConverter.GenGraphFile(idList, @"D:\data\Mutagenicity\", "4337");
+             */
 
             IndexedGraph g = new IndexedGraph();
             g.Read(@"D:\data\Mutagenicity\1000.txt");
@@ -125,7 +125,6 @@ namespace FNM_Undirected
             //            break;
             //        }
             //    }
-                
             //}
             return;
         }
