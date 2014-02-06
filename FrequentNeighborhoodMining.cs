@@ -629,14 +629,12 @@ namespace FNM_Undirected
             //fpm.Init(_g, minSupp, maxSize);
 
             
-            Console.WriteLine("{0} seconds. {1} path results.",
-                (DateTime.Now - begin).TotalSeconds,
-                fpm._resultCache.Count);
+            //Console.WriteLine("{0} seconds. {1} path results.",(DateTime.Now - begin).TotalSeconds, fpm._resultCache.Count);
 
 
             List<Tuple<IndexedGraph, List<int>>> ret = new List<Tuple<IndexedGraph, List<int>>>();
 
-            Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
+            //Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
             List<Tuple<IndexedGraph, List<int>>> lastResults = fpm.GetPathAndVID(1);
 
             ret.AddRange(fpm.GetPathAndVID(1));
@@ -644,7 +642,7 @@ namespace FNM_Undirected
             for (int size = 2; size <= maxSize; size++)
             {
                 begin = DateTime.Now;
-                Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
+                //Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
                 List<Tuple<IndexedGraph, List<int>>> tempResults = new List<Tuple<IndexedGraph, List<int>>>();
 
                 for (int i = 0; i < lastResults.Count; i++)
@@ -683,11 +681,9 @@ namespace FNM_Undirected
                         }
                     }
                 }
-                Console.WriteLine("{0} seconds. {1} candidates.",
-                    (DateTime.Now - begin).TotalSeconds,
-                    tempResults.Count);
-                begin = DateTime.Now;
-                Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
+                //Console.WriteLine("{0} seconds. {1} candidates.",(DateTime.Now - begin).TotalSeconds, tempResults.Count);
+                //begin = DateTime.Now;
+                //Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
 
                 lastResults.Clear();
                 foreach (var pair in tempResults)
@@ -733,15 +729,15 @@ namespace FNM_Undirected
                         lastResults.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1, filteredVids));
                     }
                 }
-                Console.WriteLine("{0} seconds. {1} results.",
-                    (DateTime.Now - begin).TotalSeconds,
-                    lastResults.Count);
-                begin = DateTime.Now;
+                //Console.WriteLine("{0} seconds. {1} results.",(DateTime.Now - begin).TotalSeconds,lastResults.Count);
+                //begin = DateTime.Now;
+
+                Console.WriteLine((DateTime.Now - begin).TotalSeconds);
 
                 var addpath = fpm.GetPathAndVID(size);
                 lastResults.AddRange(addpath);
 
-                Console.WriteLine("Adding {0} paths.", addpath.Count);
+                //Console.WriteLine("Adding {0} paths.", addpath.Count);
                 //lastResults.Sort((x, y) => x._vertexes.Length - y._vertexes.Length);
                 ret.AddRange(fpm.GetPathAndVID(size));
                 if (lastResults.Count == 0)

@@ -274,6 +274,21 @@ namespace FNM_Undirected
             return ret;
         }
 
+        public int GetSize()
+        {
+            int cnt = 0;
+            foreach (Vertex v in _vertexes)
+                cnt += v._vLabel.Length;
+            cnt += _edges.Length;
+            return cnt;
+        }
+
+        public int GetRadius()
+        {
+            int[] dists = GetDistArray();
+            return dists.Max();
+        }
+
         public bool Is_R_EgoNet(int radius)//Assert: graph is connected, pivot is node0
         {
             Queue<Tuple<int, int>> queue = new Queue<Tuple<int, int>>();

@@ -255,6 +255,11 @@ namespace FNM_Undirected
                 {
                     if (((List<int>)pair.Value).Count < minSupp)
                         continue;
+
+                    //为了不在Egonet里引入牵涉自身Label的Feature
+                    if (thisPath.Count == 0 && pair.Key.Item2 == StepType.Nlabel)
+                        continue;
+
                     Path newPath = new Path(thisPath, pair.Key);
                     _resultCache.Add(new Tuple<Path, List<int>>(newPath, pair.Value));
                     if (pair.Key.Item2 != StepType.Nlabel)
