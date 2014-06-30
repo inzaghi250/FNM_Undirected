@@ -401,7 +401,8 @@ namespace FNM_Undirected
     }
 
     public class FrequentNeighborhoodMining
-    {      
+    {
+        public bool RunSilent = false;
         IndexedGraph _g;
         SubGraphTest _subGTester;
         NodeInvariantIndex _niindex;
@@ -629,12 +630,14 @@ namespace FNM_Undirected
             //fpm.Init(_g, minSupp, maxSize);
 
             
-            //Console.WriteLine("{0} seconds. {1} path results.",(DateTime.Now - begin).TotalSeconds, fpm._resultCache.Count);
+            if(!RunSilent)
+                Console.WriteLine("{0} seconds. {1} path results.",(DateTime.Now - begin).TotalSeconds, fpm._resultCache.Count);
 
 
             List<Tuple<IndexedGraph, List<int>>> ret = new List<Tuple<IndexedGraph, List<int>>>();
 
-            //Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
+            if (!RunSilent)
+                Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
             List<Tuple<IndexedGraph, List<int>>> lastResults = fpm.GetPathAndVID(1);
 
             ret.AddRange(fpm.GetPathAndVID(1));
@@ -642,7 +645,8 @@ namespace FNM_Undirected
             for (int size = 2; size <= maxSize; size++)
             {
                 begin = DateTime.Now;
-                //Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
+                if (!RunSilent)
+                    Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
                 List<Tuple<IndexedGraph, List<int>>> tempResults = new List<Tuple<IndexedGraph, List<int>>>();
 
                 for (int i = 0; i < lastResults.Count; i++)
@@ -681,9 +685,12 @@ namespace FNM_Undirected
                         }
                     }
                 }
-                //Console.WriteLine("{0} seconds. {1} candidates.",(DateTime.Now - begin).TotalSeconds, tempResults.Count);
-                //begin = DateTime.Now;
-                //Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
+                if (!RunSilent)
+                {
+                    Console.WriteLine("{0} seconds. {1} candidates.", (DateTime.Now - begin).TotalSeconds, tempResults.Count);
+                    begin = DateTime.Now;
+                    Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
+                }
 
                 lastResults.Clear();
                 foreach (var pair in tempResults)
@@ -729,15 +736,19 @@ namespace FNM_Undirected
                         lastResults.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1, filteredVids));
                     }
                 }
-                //Console.WriteLine("{0} seconds. {1} results.",(DateTime.Now - begin).TotalSeconds,lastResults.Count);
-                //begin = DateTime.Now;
+                if (!RunSilent)
+                {
+                    Console.WriteLine("{0} seconds. {1} results.", (DateTime.Now - begin).TotalSeconds, lastResults.Count);
+                    begin = DateTime.Now;
+                }
 
                 Console.WriteLine((DateTime.Now - begin).TotalSeconds);
 
                 var addpath = fpm.GetPathAndVID(size);
                 lastResults.AddRange(addpath);
 
-                //Console.WriteLine("Adding {0} paths.", addpath.Count);
+                if (!RunSilent) 
+                    Console.WriteLine("Adding {0} paths.", addpath.Count);
                 //lastResults.Sort((x, y) => x._vertexes.Length - y._vertexes.Length);
                 ret.AddRange(fpm.GetPathAndVID(size));
                 if (lastResults.Count == 0)
@@ -760,14 +771,14 @@ namespace FNM_Undirected
             fpm.Init(_g, minSupp, maxSize, constraintVSet, true, maxRadius);
             //fpm.Init(_g, minSupp, maxSize);
 
-            Console.WriteLine("{0} seconds. {1} path results.",
-                (DateTime.Now - begin).TotalSeconds,
-                fpm._resultCache.Count);
+            if (!RunSilent) 
+                Console.WriteLine("{0} seconds. {1} path results.", (DateTime.Now - begin).TotalSeconds, fpm._resultCache.Count);
 
 
             List<Tuple<IndexedGraph, List<int>>> ret = new List<Tuple<IndexedGraph, List<int>>>();
 
-            Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
+            if (!RunSilent) 
+                Console.WriteLine("Adding {0} paths.", fpm.GetPathAndVID(1).Count);
             List<Tuple<IndexedGraph, List<int>>> lastResults = fpm.GetPathAndVID(1);
 
             ret.AddRange(fpm.GetPathAndVID(1));
@@ -779,7 +790,8 @@ namespace FNM_Undirected
             for (int size = 2; size <= maxSize; size++)
             {
                 begin = DateTime.Now;
-                Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
+                if (!RunSilent) 
+                    Console.WriteLine("Computing Size-{0} Candidate Patterns.", size);
                 List<Tuple<IndexedGraph, List<int>>> tempResults = new List<Tuple<IndexedGraph, List<int>>>();
 
                 for (int i = 0; i < lastResults.Count; i++)
@@ -819,11 +831,11 @@ namespace FNM_Undirected
                         }
                     }
                 }
-                Console.WriteLine("{0} seconds. {1} candidates.",
-                    (DateTime.Now - begin).TotalSeconds,
-                    tempResults.Count);
+                if (!RunSilent) 
+                    Console.WriteLine("{0} seconds. {1} candidates.", (DateTime.Now - begin).TotalSeconds, tempResults.Count);
                 begin = DateTime.Now;
-                Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
+                if (!RunSilent) 
+                    Console.WriteLine("Validating Size-{0} Candidate Patterns.", size);
 
                 //Compute Zipper Patterns
                 List<Tuple<IndexedGraph, List<int>>> zipperPatterns=new List<Tuple<IndexedGraph,List<int>>>();
@@ -921,9 +933,8 @@ namespace FNM_Undirected
                         lastResults.Add(new Tuple<IndexedGraph, List<int>>(pair.Item1, filteredVids));
                     }
                 }
-                Console.WriteLine("{0} seconds. {1} results.",
-                    (DateTime.Now - begin).TotalSeconds,
-                    lastResults.Count);
+                if (!RunSilent) 
+                    Console.WriteLine("{0} seconds. {1} results.", (DateTime.Now - begin).TotalSeconds, lastResults.Count);
                 begin = DateTime.Now;
 
                 if (size <= maxRadius + 1)
@@ -931,14 +942,16 @@ namespace FNM_Undirected
                     var addpath = fpm.GetPathAndVID(size);
                     lastResults.AddRange(addpath);
 
-                    Console.WriteLine("Adding {0} paths.", addpath.Count);
+                    if (!RunSilent) 
+                        Console.WriteLine("Adding {0} paths.", addpath.Count);
                     //lastResults.Sort((x, y) => x._vertexes.Length - y._vertexes.Length);
                     ret.AddRange(fpm.GetPathAndVID(size));
                 }
                 else
                 {
                     //add Zipper Patterns
-                    Console.WriteLine("Adding {0} Zippers.", zipperPatterns.Count);
+                    if (!RunSilent) 
+                        Console.WriteLine("Adding {0} Zippers.", zipperPatterns.Count);
                     lastResults.AddRange(zipperPatterns);
                     ret.AddRange(zipperPatterns);
                 }
