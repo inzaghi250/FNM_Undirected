@@ -891,7 +891,7 @@ namespace FNM_Undirected
                                 v2._assoEdge = newInEdgeList;
                                 g.GenIndex();
 
-                                zipperPatterns.Add(new Tuple<IndexedGraph, List<int>>(g, tup.Item2));
+                                zipperPatterns.Add(new Tuple<IndexedGraph, List<int>>(g, pair.Value));
                             }
                     }
                 }
