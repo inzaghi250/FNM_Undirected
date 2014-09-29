@@ -16,7 +16,7 @@ namespace FNM_Undirected
         public Step(int id, StepType type) : base(id, type) { }
         public override int GetHashCode()
         {
-            return Item1.GetHashCode() & Item2.GetHashCode();
+            return Item1.GetHashCode() | Item2.GetHashCode();
         }
         public override bool Equals(object obj)
         {
